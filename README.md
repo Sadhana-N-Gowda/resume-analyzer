@@ -36,12 +36,10 @@ MySQL
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8080/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resumeText": "Java developer with Spring Boot experience...",
-    "jobDescription": "Looking for a backend engineer with Java, Spring Boot, AWS..."
-  }'
+{
+  "resumeText": "Java developer with Spring Boot experience, REST APIs, MySQL, AWS...",
+  "jobDescription": "Looking for a backend engineer with Java, Spring Boot, AWS, Docker..."
+}
 ```
 
 **Response:**
@@ -49,8 +47,8 @@ curl -X POST http://localhost:8080/api/analyze \
 {
   "id": 1,
   "matchScore": 78,
-  "missingSkills": "[\"Kubernetes\", \"GraphQL\"]",
-  "suggestions": "[\"Add a project demonstrating cloud deployment\"]",
+  "missingSkills": ["Kubernetes", "GraphQL"],
+  "suggestions": ["Add a project demonstrating cloud deployment", "Highlight Docker experience"],
   "createdAt": "2026-08-09T10:30:00"
 }
 ```
