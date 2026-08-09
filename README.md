@@ -5,10 +5,10 @@ A Spring Boot REST API that analyzes how well a resume matches a job description
 ## Screenshot
 
 **Input Form**
-![Resume Analyzer Input](src/main/resources/static/docs/screenshot.png)
+![Resume Analyzer Input](src/main/resources/static/docs/screenshot.PNG)
 
 **Analysis Result**
-![Resume Analyzer Result](src/main/resources/static/docs/screenshot2.png)
+![Resume Analyzer Result](src/main/resources/static/docs/screenshot2.PNG)
 
 ## Features
 - Compare resume text against a job description
