@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f6fa;
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+            color: #1a1a2e;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #4a69bd;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #4a69bd;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background: #3b5599; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+
+        #result { display: none; }
+        .score-box {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .score-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #4a69bd;
+        }
+        .score-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1a1a2e;
+        }
+        ul { padding-left: 20px; margin: 0 0 16px 0; }
+        li { margin-bottom: 6px; }
+        .missing-skill {
+            display: inline-block;
+            background: #ffe8e8;
+            color: #c0392b;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin: 4px 4px 4px 0;
+            font-size: 13px;
+        }
+        #error {
+            display: none;
+            background: #ffe8e8;
+            color: #c0392b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Resume Analyzer</h1>
+    <p class="subtitle">Compare your resume against a job description using AI</p>
+
+    <div class="card">
+        <label for="resumeText">Resume</label>
+        <textarea id="resumeText" placeholder="Paste your resume text here..."></textarea>
+
+        <label for="jobDescription">Job Description</label>
+        <textarea id="jobDescription" placeholder="Paste the job description here..."></textarea>
+
+        <button id="analyzeBtn" onclick="analyze()">Analyze Match</button>
+    </div>
+
+    <div id="loading">Analyzing... this may take a few seconds</div>
+    <div id="error"></div>
+
+    <div id="result" class="card">
+        <div class="score-box">
+            <div class="score-number" id="scoreNumber">-</div>
+            <div class="score-label">Match Score</div>
+        </div>
+
+        <div class="section-title">Missing Skills</div>
+        <div id="missingSkills"></div>
+
+        <div class="section-title" style="margin-top: 20px;">Suggestions</div>
+        <ul id="suggestions"></ul>
+    </div>
+
+    <script>
+        async function analyze() {
+            const resumeText = document.getElementById('resumeText').value.trim();
+            const jobDescription = document.getElementById('jobDescription').value.trim();
+            const btn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const errorBox = document.getElementById('error');
+            const resultBox = document.getElementById('result');
+
+            errorBox.style.display = 'none';
+            resultBox.style.display = 'none';
+
+            if (!resumeText || !jobDescription) {
+                errorBox.textContent = 'Please fill in both resume and job description.';
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ resumeText, jobDescription })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.message || 'Analysis failed. Please try again.');
+                }
+
+                const data = await response.json();
+                renderResult(data);
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        function renderResult(data) {
+            document.getElementById('scoreNumber').textContent = data.matchScore + '%';
+
+            const missingSkillsDiv = document.getElementById('missingSkills');
+            missingSkillsDiv.innerHTML = '';
+            (data.missingSkills || []).forEach(skill => {
+                const span = document.createElement('span');
+                span.className = 'missing-skill';
+                span.textContent = skill;
+                missingSkillsDiv.appendChild(span);
+            });
+
+            const suggestionsList = document.getElementById('suggestions');
+            suggestionsList.innerHTML = '';
+            (data.suggestions || []).forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = s;
+                suggestionsList.appendChild(li);
+            });
+
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

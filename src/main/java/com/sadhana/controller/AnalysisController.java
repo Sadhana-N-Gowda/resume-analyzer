@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sadhana.entity.ResumeAnalysisResult;
 import com.sadhana.request.AnalyzeRequest;
+import com.sadhana.response.AnalysisResponse;
 import com.sadhana.service.AnalysisService;
 
 import jakarta.validation.Valid;
@@ -21,8 +22,8 @@ public class AnalysisController {
     private AnalysisService analysisService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<ResumeAnalysisResult> analyze(@Valid @RequestBody AnalyzeRequest request) {
-    	ResumeAnalysisResult result = analysisService.analyze(
+    public ResponseEntity<AnalysisResponse> analyze(@Valid @RequestBody AnalyzeRequest request) {
+    	AnalysisResponse result = analysisService.analyze(
                 request.getResumeText(),
                 request.getJobDescription()
         );

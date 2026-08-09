@@ -1,11 +1,15 @@
 package com.sadhana.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sadhana.entity.ResumeAnalysisResult;
 import com.sadhana.repository.ResumeAnalysisResultRepository;
+import com.sadhana.response.AnalysisResponse;
 
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -23,7 +27,7 @@ public class AnalysisService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ResumeAnalysisResult analyze(String resumeText, String jobDescription) {
+    public AnalysisResponse analyze(String resumeText, String jobDescription) {
         // Step 1: build prompt
         String prompt = promptBuilder.buildPrompt(resumeText, jobDescription);
 
@@ -33,9 +37,10 @@ public class AnalysisService {
         // Step 3: clean + parse JSON
         String cleanJson = cleanResponse(rawResponse);
         ResumeAnalysisResult result = parseToEntity(cleanJson, resumeText, jobDescription);
+        ResumeAnalysisResult saved = repository.save(result);
 
         // Step 4: save to DB
-        return repository.save(result);
+          return toResponse(saved);
     }
 
     private String cleanResponse(String rawResponse) {
@@ -62,4 +67,22 @@ public class AnalysisService {
             throw new RuntimeException("Failed to parse Gemini response: " + json, e);
         }
     }
+    
+    private AnalysisResponse toResponse(ResumeAnalysisResult result) {
+        try {
+            AnalysisResponse response = new AnalysisResponse();
+            response.setId(result.getId());
+            response.setMatchScore(result.getMatchSore());
+            response.setMissingSkills(
+                objectMapper.readValue(result.getMissingSkills(), new TypeReference<List<String>>() {})
+            );
+            response.setSuggestions(
+                objectMapper.readValue(result.getSuggestions(), new TypeReference<List<String>>() {})
+            );
+            response.setCreatedAt(result.getCreatedAt());
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to build response", e);
+        }
+}
 }
